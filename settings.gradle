@@ -7,4 +7,49 @@
  * in the user manual at https://docs.gradle.org/6.5/userguide/multi_project_builds.html
  */
 
+import java.nio.file.Files
+import static groovy.io.FileType.DIRECTORIES
+import static groovy.io.FileVisitResult.SKIP_SUBTREE
+
 rootProject.name = 'harmony'
+
+/**
+ * Reports the Gradle name of the project from its directory path.
+ *
+ * @param dir Directory path of a Gradle project.
+ * @return the name of the corresponding Gradle project.
+ */
+String getProjectName(String dir) {
+    return dir.minus(rootDir.toString()).substring(1).replaceAll("/", ":").replaceAll("\\\\", ":")
+}
+
+void includeAllProjects() {
+    def skipSubDirs = ~/^(build|\..*|src|out|_infra)/
+    def skipTopLevelDirs = ~/^(build-src|tools)/
+
+    def excludeDir = {
+        def relativePath = it.toString().replaceAll(rootDir.toString() + "/", "")
+        if (skipTopLevelDirs.matcher(relativePath).matches()) {
+            return SKIP_SUBTREE
+        }
+        if (skipSubDirs.matcher(it.name).matches()) {
+            return SKIP_SUBTREE
+        }
+        if (Files.isSymbolicLink(it.toPath())) {
+            return SKIP_SUBTREE
+        }
+    }
+
+    // preDir is used to exclude children of the current dir
+    // excludeFilter is used to exclude the current dir itself
+    rootDir.traverse(type: DIRECTORIES, preDir: excludeDir, excludeFilter: excludeDir) { dir ->
+        String dstr = dir.toString()
+        if (new File(dstr + "/build.gradle").exists()) {
+            String projectName = getProjectName(dstr)
+            include projectName
+            logger.info("adding project: $projectName")
+        }
+    }
+}
+
+includeAllProjects()
