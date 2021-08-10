@@ -17,7 +17,18 @@ class Harmony(val coordinate: MavenCoordinate, val sourceDir: File) {
     }
 
     private fun downloadPOM(coordinate: MavenCoordinate) {
-        TODO("Not yet implemented")
+        val downloadUrl = POM_URL
+            .replace("GROUP_ID", coordinate.getGroupUrl())
+            .replace("ARTIFACT_ID", coordinate.artifactId)
+            .replace("VERSION", coordinate.version)
+
+        val file = download(downloadUrl, coordinate.toString(), ".pom")
+        println("file: $file")
+
+        val projectDir = sourceDir
+            .resolve(coordinate.getGroupUrl())
+            .resolve(coordinate.artifactId)
+        unpackTarball(file, projectDir)
     }
 
     private fun downloadSource(coordinate: MavenCoordinate) {
