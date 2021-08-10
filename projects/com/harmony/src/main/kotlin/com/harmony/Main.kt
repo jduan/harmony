@@ -1,5 +1,7 @@
 package com.harmony
 
+import java.io.File
+
 class Main {
     object Main {
         /**
@@ -11,12 +13,14 @@ class Main {
          */
         @JvmStatic
         fun main(args: Array<String>) {
-            if (args.size != 1) {
-                throw RuntimeException("ERROR: expect one argument but got ${args.size}")
+            if (args.size != 2) {
+                throw RuntimeException("ERROR: expect two arguments but got ${args.size}")
             }
+            val library = args[0]
+            val sourceDir = File(args[1])
             val (groupId, artifactId, version) = args[0].split(":")
             val coordinate = MavenCoordinate(groupId, artifactId, version)
-            Harmony().run(coordinate)
+            Harmony(coordinate, sourceDir).run()
         }
     }
 }
