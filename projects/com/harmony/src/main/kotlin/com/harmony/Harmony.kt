@@ -1,22 +1,41 @@
 package com.harmony
 
 import com.google.common.io.ByteStreams
+import com.harmony.pom.POM
 import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream
 import org.apache.commons.compress.utils.CloseShieldFilterInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.LinkedList
 
 
-class Harmony(val coordinate: MavenCoordinate, val sourceDir: File) {
+class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: File) {
     fun run() {
-        downloadSource(coordinate)
-        // downloadPOM(coordinate)
+        val queue = LinkedList<MavenCoordinate>()
+        queue.add(coordinate)
+        val visited = mutableListOf<MavenCoordinate>()
+
+        while (queue.isNotEmpty()) {
+            val coord = queue.pop()
+            if (coord in visited) {
+                continue
+            }
+            println("handling coord: $coord")
+            visited.add(coord)
+            downloadSource(coord)
+            val pom = downloadPOM(coord)
+            pom.dependencies?.forEach { dep ->
+                queue.add(dep.toMavenCoordinate())
+                println("added to queue: ${dep.toMavenCoordinate()}")
+            }
+        }
     }
 
-    private fun downloadPOM(coordinate: MavenCoordinate) {
+    private fun downloadPOM(coordinate: MavenCoordinate): POM {
         val downloadUrl = POM_URL
             .replace("GROUP_ID", coordinate.getGroupUrl())
             .replace("ARTIFACT_ID", coordinate.artifactId)
@@ -24,11 +43,7 @@ class Harmony(val coordinate: MavenCoordinate, val sourceDir: File) {
 
         val file = download(downloadUrl, coordinate.toString(), ".pom")
         println("file: $file")
-
-        val projectDir = sourceDir
-            .resolve(coordinate.getGroupUrl())
-            .resolve(coordinate.artifactId)
-        unpackTarball(file, projectDir)
+        return POM.loadFromStream(FileInputStream(file))
     }
 
     private fun downloadSource(coordinate: MavenCoordinate) {
@@ -80,9 +95,9 @@ class Harmony(val coordinate: MavenCoordinate, val sourceDir: File) {
     }
 
     companion object {
-        val SOURCE_JAR_URL =
+        const val SOURCE_JAR_URL =
             "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION-sources.jar"
-        val POM_URL =
+        const val POM_URL =
             "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION.pom"
     }
 }
