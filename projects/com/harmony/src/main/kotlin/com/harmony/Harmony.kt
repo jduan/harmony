@@ -18,6 +18,7 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         val queue = LinkedList<MavenCoordinate>()
         queue.add(coordinate)
         val visited = mutableListOf<MavenCoordinate>()
+        val allProjects = AllProjects()
 
         while (queue.isNotEmpty()) {
             val coord = queue.pop()
@@ -26,12 +27,28 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             }
             println("handling coord: $coord")
             visited.add(coord)
-            downloadSource(coord)
+            val projectDir = downloadSource(coord)
             val pom = downloadPOM(coord)
             pom.dependencies?.forEach { dep ->
                 queue.add(dep.toMavenCoordinate())
                 println("added to queue: ${dep.toMavenCoordinate()}")
             }
+
+            allProjects.add(Project(projectDir, pom))
+        }
+
+        allProjects.getAll().forEach { project ->
+            project.pom.dependencies?.forEach { dep ->
+                val projectDir = dep.toProjectDir(sourceDir)
+                val depProject = allProjects.find(projectDir)
+                if (depProject != null) {
+                    project.addDependency(depProject)
+                }
+            }
+        }
+
+        allProjects.getAll().forEach { project ->
+            project.persistBuildGradle()
         }
     }
 
@@ -46,7 +63,7 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         return POM.loadFromStream(FileInputStream(file))
     }
 
-    private fun downloadSource(coordinate: MavenCoordinate) {
+    private fun downloadSource(coordinate: MavenCoordinate): File {
         val downloadUrl = SOURCE_JAR_URL
             .replace("GROUP_ID", coordinate.getGroupUrl())
             .replace("ARTIFACT_ID", coordinate.artifactId)
@@ -59,6 +76,8 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             .resolve(coordinate.getGroupUrl())
             .resolve(coordinate.artifactId)
         unpackTarball(file, projectDir)
+
+        return projectDir
     }
 
     // Unpack a tar ball of lockfiles (via a stream from an S3 object) and build a map of

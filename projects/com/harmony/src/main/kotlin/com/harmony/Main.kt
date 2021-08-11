@@ -18,7 +18,7 @@ class Main {
             }
             val library = args[0]
             val sourceDir = File(args[1])
-            val (groupId, artifactId, version) = args[0].split(":")
+            val (groupId, artifactId, version) = library.split(":")
             val coordinate = MavenCoordinate(groupId, artifactId, version)
             Harmony(coordinate, sourceDir).run()
         }

@@ -35,3 +35,7 @@ dependencies {
 application {
     mainClass = 'com.harmony.Main$Main'
 }
+
+run {
+    args "com.google.guava:guava:24.1-jre", "../.."
+}
