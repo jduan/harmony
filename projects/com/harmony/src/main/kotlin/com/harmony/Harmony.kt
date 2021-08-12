@@ -6,10 +6,6 @@ import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream
 import org.apache.commons.compress.utils.CloseShieldFilterInputStream
 import java.io.File
-import java.io.FileInputStream
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.LinkedList
 
 
@@ -28,7 +24,7 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             println("handling coord: $coord")
             visited.add(coord)
             val projectDir = downloadSource(coord)
-            val pom = downloadPOM(coord)
+            val pom = POM.downloadPOM(coord)
             pom.dependencies?.forEach { dep ->
                 queue.add(dep.toMavenCoordinate(pom))
                 println("added to queue: ${dep.toMavenCoordinate(pom)}")
@@ -52,24 +48,13 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         }
     }
 
-    private fun downloadPOM(coordinate: MavenCoordinate): POM {
-        val downloadUrl = POM_URL
-            .replace("GROUP_ID", coordinate.getGroupUrl())
-            .replace("ARTIFACT_ID", coordinate.artifactId)
-            .replace("VERSION", coordinate.version)
-
-        val file = download(downloadUrl, coordinate.toString(), ".pom")
-        println("file: $file")
-        return POM.loadFromStream(FileInputStream(file))
-    }
-
     private fun downloadSource(coordinate: MavenCoordinate): File {
         val downloadUrl = SOURCE_JAR_URL
             .replace("GROUP_ID", coordinate.getGroupUrl())
             .replace("ARTIFACT_ID", coordinate.artifactId)
             .replace("VERSION", coordinate.version)
 
-        val file = download(downloadUrl, coordinate.toString(), ".jar")
+        val file = Downloader.download(downloadUrl, coordinate.toString(), ".jar")
         println("file: $file")
 
         val projectDir = sourceDir
@@ -106,17 +91,8 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         }
     }
 
-    private fun download(url: String, name: String, suffix: String): File {
-        val inputStream = URL(url).openStream()
-        val outputFile = Files.createTempFile(name, suffix)
-        Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING)
-        return outputFile.toFile()
-    }
-
     companion object {
         const val SOURCE_JAR_URL =
             "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION-sources.jar"
-        const val POM_URL =
-            "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION.pom"
     }
 }
