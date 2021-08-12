@@ -15,6 +15,17 @@
     utility classes, Google's collections, I/O classes, and
     much more.
   </description>
+  <properties>
+    <jdkVersion>1.5</jdkVersion>
+    <surefireVersion>2.19.1</surefireVersion>
+    <hamcrestVersion>1.3</hamcrestVersion>
+    <enforcerPluginVersion>1.4</enforcerPluginVersion>
+    <jarPluginVersion>2.6</jarPluginVersion>
+    <javadocPluginVersion>2.10.3</javadocPluginVersion>
+    <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+    <arguments />
+    <gpg.keyname>67893CC4</gpg.keyname>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>

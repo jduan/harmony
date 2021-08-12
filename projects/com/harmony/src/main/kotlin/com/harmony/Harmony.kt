@@ -30,8 +30,8 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             val projectDir = downloadSource(coord)
             val pom = downloadPOM(coord)
             pom.dependencies?.forEach { dep ->
-                queue.add(dep.toMavenCoordinate())
-                println("added to queue: ${dep.toMavenCoordinate()}")
+                queue.add(dep.toMavenCoordinate(pom))
+                println("added to queue: ${dep.toMavenCoordinate(pom)}")
             }
 
             allProjects.add(Project(projectDir, pom))
