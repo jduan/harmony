@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: org.checkerframework.checker.qual
+Implementation-Version: 2.5.5
+Implementation-URL: https://checkerframework.org
+

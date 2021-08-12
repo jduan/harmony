@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    compile project(':projects:com:google:code:findbugs:jsr305')
+    compile project(':projects:org:checkerframework:checker-compat-qual')
+    compile project(':projects:com:google:errorprone:error_prone_annotations')
+    compile project(':projects:com:google:j2objc:j2objc-annotations')
+    compile project(':projects:org:codehaus:mojo:animal-sniffer-annotations')
+}
