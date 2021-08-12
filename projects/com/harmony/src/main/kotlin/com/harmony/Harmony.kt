@@ -6,6 +6,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream
 import org.apache.commons.compress.utils.CloseShieldFilterInputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.LinkedList
 
 
@@ -23,7 +24,7 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             }
             println("handling coord: $coord")
             visited.add(coord)
-            val projectDir = downloadSource(coord)
+            val projectDir = downloadSource(coord) ?: continue
             val pom = POM.downloadPOM(coord)
             pom.dependencies?.forEach { dep ->
                 queue.add(dep.toMavenCoordinate(pom))
@@ -48,13 +49,28 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         }
     }
 
-    private fun downloadSource(coordinate: MavenCoordinate): File {
+    private fun downloadSource(coordinate: MavenCoordinate): File? {
         val downloadUrl = SOURCE_JAR_URL
             .replace("GROUP_ID", coordinate.getGroupUrl())
             .replace("ARTIFACT_ID", coordinate.artifactId)
             .replace("VERSION", coordinate.version)
 
-        val file = Downloader.download(downloadUrl, coordinate.toString(), ".jar")
+        val downloadUrl2 = SOURCE_JAR_URL_BACKUP
+            .replace("GROUP_ID", coordinate.getGroupUrl())
+            .replace("ARTIFACT_ID", coordinate.artifactId)
+            .replace("VERSION", coordinate.version)
+
+        val file = try {
+            Downloader.download(downloadUrl, coordinate.toString(), ".jar")
+        } catch (ex: FileNotFoundException) {
+            Downloader.download(downloadUrl2, coordinate.toString(), ".jar")
+        } catch (ex: FileNotFoundException) {
+            null
+        }
+        if (file == null) {
+            println("Failed to download source jar for $coordinate, ignoring")
+            return null
+        }
         println("file: $file")
 
         val projectDir = sourceDir
@@ -94,5 +110,8 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
     companion object {
         const val SOURCE_JAR_URL =
             "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION-sources.jar"
+        // Some very old sources jars are named differently
+        const val SOURCE_JAR_URL_BACKUP =
+            "https://repo1.maven.org/maven2/GROUP_ID/ARTIFACT_ID/VERSION/ARTIFACT_ID-VERSION-src.jar"
     }
 }
