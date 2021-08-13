@@ -27,8 +27,11 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
             val projectDir = downloadSource(coord) ?: continue
             val pom = POM.downloadPOM(coord)
             pom.dependencies?.forEach { dep ->
-                queue.add(dep.toMavenCoordinate(pom))
-                println("added to queue: ${dep.toMavenCoordinate(pom)}")
+                // Ignore dependencies that have a "test" scope
+                if (!dep.isTestDependency()) {
+                    queue.add(dep.toMavenCoordinate(pom))
+                    println("added to queue: ${dep.toMavenCoordinate(pom)}")
+                }
             }
 
             allProjects.add(Project(projectDir, pom))
@@ -63,9 +66,11 @@ class Harmony(private val coordinate: MavenCoordinate, private val sourceDir: Fi
         val file = try {
             Downloader.download(downloadUrl, coordinate.toString(), ".jar")
         } catch (ex: FileNotFoundException) {
-            Downloader.download(downloadUrl2, coordinate.toString(), ".jar")
-        } catch (ex: FileNotFoundException) {
-            null
+            try {
+                Downloader.download(downloadUrl2, coordinate.toString(), ".jar")
+            } catch (ex: FileNotFoundException) {
+                null
+            }
         }
         if (file == null) {
             println("Failed to download source jar for $coordinate, ignoring")

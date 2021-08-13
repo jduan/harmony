@@ -55,7 +55,7 @@ data class POM(
 
             val file = Downloader.download(downloadUrl, coordinate.toString(), ".pom")
             println("file: $file")
-            return POM.loadFromStream(FileInputStream(file))
+            return loadFromStream(FileInputStream(file))
         }
 
         fun loadFromStream(inputStream: InputStream): POM {

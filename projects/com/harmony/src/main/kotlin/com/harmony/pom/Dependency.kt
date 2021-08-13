@@ -5,7 +5,7 @@ import com.harmony.MavenUtil
 import java.io.File
 import java.lang.RuntimeException
 
-data class Dependency(val groupId: String, val artifactId: String, val version: String?) {
+data class Dependency(val groupId: String, val artifactId: String, val version: String?, val scope: String?) {
     fun toMavenCoordinate(pom: POM): MavenCoordinate {
         val gid = if (groupId.startsWith("$")) {
             pom.getProperty(groupId.substring(2, groupId.length - 1).split(".").last())
@@ -38,6 +38,14 @@ data class Dependency(val groupId: String, val artifactId: String, val version: 
             }
         }
         return MavenCoordinate(gid, aid, ver)
+    }
+
+    fun isTestDependency(): Boolean {
+        return if (scope == null) {
+            false
+        } else {
+            scope == "test"
+        }
     }
 
     fun toProjectDir(sourceDir: File): File {
